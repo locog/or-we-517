@@ -1,4 +1,5 @@
 //dev branch testing ...just created
+#include "credentials.h"
 #include <WiFi.h>               // check this later https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/
 #include <ESPAsyncWebServer.h> //https://randomnerdtutorials.com/esp32-async-web-server-espasyncwebserver-library/
                                //https://github.com/me-no-dev/ESPAsyncWebServer
@@ -9,8 +10,8 @@
 float voltageL1,voltageL2,voltageL3,frequency,currentL1,currentL2,currentL3,activePowerTotal,activePowerL1,activePowerL2,activePowerL3;
 
 // Replace with your network credentials
-const char* ssid = "WIFIname";
-const char* password  = "WIFIpass";
+const char* ssid = WIFI_SSID;
+const char* password  = WIFI_PASSWD;
 
 //to use IPAddress uncomment WiFi.config in Setup()
 IPAddress ip(192, 168, 10, 202);
