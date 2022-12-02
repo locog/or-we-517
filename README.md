@@ -1,6 +1,10 @@
 ## ESP32 as data reader from OR-WE-517
 OR-WE-517 is 3-phase multi-tariff energy meter with RS-485/Modbus
 
+## Used devices
+- OR-WE-517 energy meter
+- MAX485 IC with with 2 pins Rx and Tx, known as HW-0519 / MAX485 / XY-017 / XY-K485
+- ESP32 DEVKIT V1
 
 ## Simple scheme
 
