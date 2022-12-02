@@ -2,10 +2,8 @@
 OR-WE-517 is 3-phase multi-tariff energy meter with RS-485/Modbus
 
 Simple scheme
+![Devices connection](https://github.com/locog/ESP32_to_OR-WE-517/blob/main/pictures/scheme.JPG)
 
--------|
-ESP32  16 RXD --|
-       |        | TTL 485 MAX485 XY-017
-       17 TXD --|
-       |
--------|
+Web page reachable on ESP32
+![Web page reachable on ESP32](https://github.com/locog/ESP32_to_OR-WE-517/blob/main/pictures/webUI.png)
+
