@@ -23,5 +23,6 @@ Values are pushed and page don't require reload.
 ![Web page reachable on ESP32](/pictures/webUI.png)
 
 ## Next plans
-- [X] Add Dalas temperature sensors ds18b20 ..separate ino file [ESP32-OR-WE-517_and_DS18B20_temperature_sensors_DALLAS](/ESP32-OR-WE-517_and_DS18B20_temperature_sensors_DALLAS)
-- [ ] Add REST API or Websocket and read data by server app instead sending data to server
+- Add Dalas temperature sensors ds18b20 
+- [X] Done ...separate ino file [ESP32-OR-WE-517_and_DS18B20_temperature_sensors_DALLAS](/ESP32-OR-WE-517_and_DS18B20_temperature_sensors_DALLAS)
+- Add REST API or Websocket and read data by server app instead sending data to server
