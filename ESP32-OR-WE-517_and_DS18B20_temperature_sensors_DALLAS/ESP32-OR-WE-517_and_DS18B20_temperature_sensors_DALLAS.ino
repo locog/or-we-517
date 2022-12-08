@@ -1,14 +1,28 @@
-//dev branch testing ...just created
 #include "credentials.h"
 #include <WiFi.h>               // check this later https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/
-#include <ESPAsyncWebServer.h> //https://randomnerdtutorials.com/esp32-async-web-server-espasyncwebserver-library/
-                               //https://github.com/me-no-dev/ESPAsyncWebServer
-#include <AsyncTCP.h>          //https://github.com/me-no-dev/AsyncTCP
+#include <ESPAsyncWebServer.h> // https://randomnerdtutorials.com/esp32-async-web-server-espasyncwebserver-library/
+                               // https://github.com/me-no-dev/ESPAsyncWebServer
+#include <AsyncTCP.h>          // https://github.com/me-no-dev/AsyncTCP
 #include <HTTPClient.h>
+#include <OneWire.h> // https://randomnerdtutorials.com/esp32-ds18b20-temperature-arduino-ide/
+#include <DallasTemperature.h>  // https://randomnerdtutorials.com/esp32-multiple-ds18b20-temperature-sensors/
+
+// Data wire is connected to GPIO15
+#define ONE_WIRE_BUS 15
+// Setup a oneWire instance to communicate with a OneWire device
+OneWire oneWire(ONE_WIRE_BUS);
+// Pass our oneWire reference to Dallas Temperature sensor 
+DallasTemperature sensors(&oneWire);
+
+DeviceAddress sensor1 = { 0x28, 0xFF, 0x7A, 0xB4, 0x1, 0x17, 0x3, 0xCC };
+DeviceAddress sensor2 = { 0x28, 0xFF, 0xE5, 0x2D, 0x0, 0x17, 0x3, 0xCD };
+DeviceAddress sensor3 = { 0x28, 0xFF, 0xC9, 0x1D, 0x3, 0x17, 0x4, 0x3B };
+DeviceAddress sensor4 = { 0x28, 0xFF, 0xF8, 0xBD, 0xD0, 0x16, 0x5, 0xBC };
+DeviceAddress sensor5 = { 0x28, 0xFF, 0xC9, 0x8,  0x2, 0x17, 0x3, 0xAA };
 
 #define RXD2 16
 #define TXD2 17
-float voltageL1,voltageL2,voltageL3,frequency,currentL1,currentL2,currentL3,activePowerTotal,activePowerL1,activePowerL2,activePowerL3;
+float voltageL1,voltageL2,voltageL3,frequency,currentL1,currentL2,currentL3,activePowerTotal,activePowerL1,activePowerL2,activePowerL3,tempSensor1,tempSensor2,tempSensor3,tempSensor4,tempSensor5;
 
 // Replace with your network credentials
 const char* ssid = WIFI_SSID;
@@ -67,16 +81,23 @@ String dataToHtml(const String& var){
   //Serial.println(var);
   if(var == "MYDATA"){
     String lines = "";
-      lines += "<p>L1 Voltage:" + String(voltageL1)+  "V</p>";
-      lines += "<p>L2 Voltage:" + String(voltageL2)+  "V</p>";
-      lines += "<p>L3 Voltage:" + String(voltageL3)+  "V</p>";
-      lines += "<p>L1 Current:" + String(currentL1)+  "A</p>";
-      lines += "<p>L2 Current:" + String(currentL2)+  "A</p>";
-      lines += "<p>L3 Current:" + String(currentL3)+  "A</p>";
-      lines += "<p>Active Power Total:" + String(activePowerTotal*1000)+  "W</p>";
-      lines += "<p>L1 Active Power:" + String(activePowerL1*1000)+  "W</p>";
-      lines += "<p>L2 Active Power:" + String(activePowerL2*1000)+  "W</p>";
-      lines += "<p>L3 Active Power:" + String(activePowerL3*1000)+  "W</p>";
+      lines += "<p>L1 Voltage: " + String(voltageL1)+  "V</p>";
+      lines += "<p>L2 Voltage: " + String(voltageL2)+  "V</p>";
+      lines += "<p>L3 Voltage: " + String(voltageL3)+  "V</p>";
+      lines += "<p>L1 Current: " + String(currentL1)+  "A</p>";
+      lines += "<p>L2 Current: " + String(currentL2)+  "A</p>";
+      lines += "<p>L3 Current: " + String(currentL3)+  "A</p>";
+      lines += "<p>Active Power Total: " + String(activePowerTotal*1000)+  "W</p>";
+      lines += "<p>L1 Active Power: " + String(activePowerL1*1000)+  "W</p>";
+      lines += "<p>L2 Active Power: " + String(activePowerL2*1000)+  "W</p>";
+      lines += "<p>L3 Active Power: " + String(activePowerL3*1000)+  "W</p>";
+      lines += "<br>";
+      lines += "<h2>ESP32 | Temperature sensors</h2>";
+      lines += "<p>Sensor1:  " + String(tempSensor1)+  "°C</p>";
+      lines += "<p>Sensor2:  " + String(tempSensor2)+  "°C</p>";
+      lines += "<p>Sensor3:  " + String(tempSensor3)+  "°C</p>";
+      lines += "<p>Sensor4:  " + String(tempSensor4)+  "°C</p>";
+      lines += "<p>Sensor5:  " + String(tempSensor5)+  "°C</p>";
 
     return lines;
   }
@@ -111,6 +132,9 @@ void setup() {
   Serial.print("\n");
   Serial.print("Connected to Wi-Fi: ");
   Serial.println(WiFi.SSID());
+  Serial.println(WiFi.localIP());
+  WiFi.setAutoReconnect(true);
+  WiFi.persistent(true);
   delay(100);
 
 
@@ -132,6 +156,8 @@ void setup() {
 
   // Start server
   server.begin();
+  
+  sensors.begin();
 }
 
 float From32HexToDec (byte val1, byte val2, byte val3, byte val4){
@@ -146,7 +172,31 @@ float From32HexToDec (byte val1, byte val2, byte val3, byte val4){
 
 
 void loop() {
+ Serial.print("Requesting temperatures...");
+  sensors.requestTemperatures(); // Send the command to get temperatures
+  Serial.println("DONE");
+
+  tempSensor1 = sensors.getTempC(sensor1);
+  Serial.print("Sensor 1(*C): ");
+  Serial.println(tempSensor1); 
+ 
+ tempSensor2 = sensors.getTempC(sensor2);
+  Serial.print("Sensor 2(*C): ");
+  Serial.println(tempSensor2); 
   
+  tempSensor3 = sensors.getTempC(sensor3);
+  Serial.print("Sensor 3(*C): ");
+  Serial.println(tempSensor3); 
+  
+  tempSensor4 = sensors.getTempC(sensor4);
+  Serial.print("Sensor 4(*C): ");
+  Serial.println(tempSensor4); 
+    
+  tempSensor5 = sensors.getTempC(sensor5);
+  Serial.print("Sensor 5(*C): ");
+  Serial.println(tempSensor5); 
+ Serial.println();
+ 
 // ************************  SEND DATA TO DEVICE ************************* 
 // https://unserver.xyz/modbus-guide/#modbus-rtu-data-frame-section
 // CRC calculator https://www.simplymodbus.ca/crc.xls
@@ -352,5 +402,6 @@ Serial.println();
 delay(5000);        
 
 }
+
 
 
