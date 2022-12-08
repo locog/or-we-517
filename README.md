@@ -20,7 +20,13 @@ OR-WE-517 is 3-phase multi-tariff energy meter with RS-485/Modbus
 Web server running on ESP32 provide you actual data. 
 Values are pushed and page don't require reload.
 
+***ESP32-OR-WE-517***
+
 ![Web page reachable on ESP32](/pictures/webUI.png)
+
+***ESP32-OR-WE-517_and_DS18B20_temperature_sensors_DALLAS***
+
+![Web page reachable on ESP32](/pictures/webUIDalas.PNG)
 
 ## Next plans
 - Add Dalas temperature sensors ds18b20 
