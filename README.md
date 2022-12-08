@@ -10,6 +10,10 @@ OR-WE-517 is 3-phase multi-tariff energy meter with RS-485/Modbus
 
 ![Devices connection](/pictures/scheme.JPG)
 
+**Additional scheme with DS18B20 temperature sensors "DALLAS"**
+
+![Devices connection+Dallas](/pictures/scheme_dallas.JPG)
+
 ## Important notes
 1. All used sources and comments are directly in code as comment. 
 2. Serial2 config - don't use 8N1 with deveice OR-WE-517 !!! It take me long to find out correct setting SERIAL_8E1  .
@@ -20,11 +24,11 @@ OR-WE-517 is 3-phase multi-tariff energy meter with RS-485/Modbus
 Web server running on ESP32 provide you actual data. 
 Values are pushed and page don't require reload.
 
-***ESP32-OR-WE-517***
+**ESP32-OR-WE-517**
 
 ![Web page reachable on ESP32](/pictures/webUI.png)
 
-***ESP32-OR-WE-517_and_DS18B20_temperature_sensors_DALLAS***
+**ESP32-OR-WE-517 and DS18B20 temperature sensors DALLAS**
 
 ![Web page reachable on ESP32](/pictures/webUIDalas.PNG)
 
