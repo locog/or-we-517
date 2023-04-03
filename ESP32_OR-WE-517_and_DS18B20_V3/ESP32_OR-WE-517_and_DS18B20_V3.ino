@@ -1,8 +1,9 @@
 #include "credentials.h"
 #include <WiFi.h>               // check this later https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/
 #include <ESPAsyncWebServer.h> // https://randomnerdtutorials.com/esp32-async-web-server-espasyncwebserver-library/
-                               // https://github.com/me-no-dev/ESPAsyncWebServer
+                              // https://github.com/me-no-dev/ESPAsyncWebServer
 
+#include <ArduinoJson.h>  //https://microcontrollerslab.com/esp32-rest-api-web-server-get-post-postman/
 #include <OneWire.h> // https://randomnerdtutorials.com/esp32-ds18b20-temperature-arduino-ide/
 #include <DallasTemperature.h>  // https://randomnerdtutorials.com/esp32-multiple-ds18b20-temperature-sensors/
 
@@ -23,6 +24,9 @@ DeviceAddress sensor5 = { 0x28, 0xFF, 0xC9, 0x8,  0x2, 0x17, 0x3, 0xAA };
 #define TXD2 17
 float voltageL1,voltageL2,voltageL3,frequency,currentL1,currentL2,currentL3,activePowerTotal,activePowerL1,activePowerL2,activePowerL3,tempSensor1,tempSensor2,tempSensor3,tempSensor4,tempSensor5;
 
+StaticJsonDocument<1000> jsonDocument;
+char buffer[1000];
+
 // Replace with your network credentials
 const char* ssid = WIFI_SSID;
 const char* password  = WIFI_PASSWD;
@@ -37,6 +41,7 @@ String hostname = "ESP32_Power"; // https://randomnerdtutorials.com/esp32-set-cu
 
 
 AsyncWebServer server(80);
+
 
 //web page with all available data reachable on http://192.168.10.200/ ...auto refresh
 
@@ -77,12 +82,12 @@ String dataToHtml(const String& var){
   //Serial.println(var);
   if(var == "MYDATA"){
     String lines = "";
-      lines += "<p>L1 Voltage: " + String(voltageL1)+  "V</p>";
-      lines += "<p>L2 Voltage: " + String(voltageL2)+  "V</p>";
-      lines += "<p>L3 Voltage: " + String(voltageL3)+  "V</p>";
-      lines += "<p>L1 Current: " + String(currentL1)+  "A</p>";
-      lines += "<p>L2 Current: " + String(currentL2)+  "A</p>";
-      lines += "<p>L3 Current: " + String(currentL3)+  "A</p>";
+      // lines += "<p>L1 Voltage: " + String(voltageL1)+  "V</p>";
+      // lines += "<p>L2 Voltage: " + String(voltageL2)+  "V</p>";
+      // lines += "<p>L3 Voltage: " + String(voltageL3)+  "V</p>";
+      // lines += "<p>L1 Current: " + String(currentL1)+  "A</p>";
+      // lines += "<p>L2 Current: " + String(currentL2)+  "A</p>";
+      // lines += "<p>L3 Current: " + String(currentL3)+  "A</p>";
       lines += "<p>Active Power Total: " + String(activePowerTotal*1000)+  "W</p>";
       lines += "<p>L1 Active Power: " + String(activePowerL1*1000)+  "W</p>";
       lines += "<p>L2 Active Power: " + String(activePowerL2*1000)+  "W</p>";
@@ -100,12 +105,23 @@ String dataToHtml(const String& var){
   return String();
 }
 
-
-
-
-
 int i;
 int sendmsglen=8; // send message for OR-WE-517 is always 8bites long 
+
+// void create_json(char *tag, float value, char *unit) {  
+//   jsonDocument.clear();  
+//   jsonDocument["type"] = tag;
+//   jsonDocument["value"] = value;
+//   jsonDocument["unit"] = unit;
+//   serializeJson(jsonDocument, buffer);
+// }
+ 
+void add_json_object(char *tag, float value, char *unit) {
+  JsonObject obj = jsonDocument.createNestedObject();
+  obj["sensor"] = tag;
+  obj["value"] = value;
+  obj["unit"] = unit; 
+}
 
 void setup() {
   Serial.begin(115200);
@@ -135,7 +151,8 @@ void setup() {
 
 
   delay(2000);
-  // Route for root / web page
+  
+ // Route for root / web page
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/html", index_html,dataToHtml);
   });
@@ -150,9 +167,52 @@ void setup() {
        request->send(200, "text/plain", "OK");
   });
 
+// get temperature
+  server.on("/temperature", HTTP_GET, [] (AsyncWebServerRequest *request) {
+      Serial.println("Get temperatures");
+      jsonDocument.clear();
+      add_json_object("tempSensor1", tempSensor1, "°C");
+      add_json_object("tempSensor2", tempSensor2, "°C");
+      add_json_object("tempSensor3", tempSensor3, "°C");
+      add_json_object("tempSensor4", tempSensor4, "°C");
+      add_json_object("tempSensor5", tempSensor5, "°C");
+      serializeJson(jsonDocument, buffer);
+      request->send(200, "application/json", buffer);
+  }); 
+
+
+// get power data
+  server.on("/power", HTTP_GET, [] (AsyncWebServerRequest *request) {
+      Serial.println("Get power data");
+      jsonDocument.clear();
+      add_json_object("activePowerTotal", activePowerTotal*1000, "W");
+      add_json_object("activePowerL1", activePowerL1*1000, "W");
+      add_json_object("activePowerL2", activePowerL2*1000, "W");
+      add_json_object("activePowerL3", activePowerL3*1000, "W");
+      serializeJson(jsonDocument, buffer);
+      request->send(200, "application/json", buffer);
+  }); 
+
+  // get all data
+  server.on("/all", HTTP_GET, [] (AsyncWebServerRequest *request) {
+      Serial.println("Get all data");
+      jsonDocument.clear();
+      add_json_object("tempSensor1", tempSensor1, "°C");
+      add_json_object("tempSensor2", tempSensor2, "°C");
+      add_json_object("tempSensor3", tempSensor3, "°C");
+      add_json_object("tempSensor4", tempSensor4, "°C");
+      add_json_object("tempSensor5", tempSensor5, "°C");
+      add_json_object("activePowerTotal", activePowerTotal*1000, "W");
+      add_json_object("activePowerL1", activePowerL1*1000, "W");
+      add_json_object("activePowerL2", activePowerL2*1000, "W");
+      add_json_object("activePowerL3", activePowerL3*1000, "W");
+      serializeJson(jsonDocument, buffer);
+      request->send(200, "application/json", buffer);
+  }); 
+
   // Start server
   server.begin();
-  
+ 
   sensors.begin();
 }
 
