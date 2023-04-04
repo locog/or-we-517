@@ -444,7 +444,7 @@ void firstPowerData(byte data[]){
     Serial.print("L1 Active Power: ");
     Serial.print(activePowerL1);
     Serial.println(" W");
-    
+
     // *1000 to get W because provided value is in kW
     activePowerL2 =From32HexToDec(receivedmsg[39],receivedmsg[40],receivedmsg[41],receivedmsg[42])*1000;
     Serial.print("L2 Active Power: ");
@@ -514,7 +514,7 @@ void loop() {
 
     delay(2000);  
 
-    byte secondMsgArray[]={0x01, 0x03, 0x01, 0x00, 0x00, 0x03, 0x04, 0x37};
+    byte secondMsgArray[]={0x01, 0x03, 0x01, 0x00, 0x00, 0x08, 0x45, 0xF0};
     // sendMessageModbus(secondMsgArray);  
     // receivedMessageModbus();
     // splitReceivedData();
