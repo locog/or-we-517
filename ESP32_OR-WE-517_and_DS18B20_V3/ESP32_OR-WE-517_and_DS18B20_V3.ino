@@ -22,10 +22,11 @@ DeviceAddress sensor5 = { 0x28, 0xFF, 0xC9, 0x8,  0x2, 0x17, 0x3, 0xAA };
 
 #define RXD2 16
 #define TXD2 17
-float voltageL1,voltageL2,voltageL3,frequency,currentL1,currentL2,currentL3,activePowerTotal,activePowerL1,activePowerL2,activePowerL3,tempSensor1,tempSensor2,tempSensor3,tempSensor4,tempSensor5;
 
-StaticJsonDocument<1000> jsonDocument;
-char buffer[1000];
+float voltageL1,voltageL2,voltageL3,frequency,currentL1,currentL2,currentL3,activePowerTotal,activePowerL1,activePowerL2,activePowerL3,tempSensor1,tempSensor2,tempSensor3,tempSensor4,tempSensor5,totalActiveEnergy,totalActiveEnergyL1,totalActiveEnergyL2,totalActiveEnergyL3;
+
+StaticJsonDocument<2000> jsonDocument;
+char buffer[2000];
 
 // Replace with your network credentials
 const char* ssid = WIFI_SSID;
@@ -88,10 +89,14 @@ String dataToHtml(const String& var){
       // lines += "<p>L1 Current: " + String(currentL1)+  "A</p>";
       // lines += "<p>L2 Current: " + String(currentL2)+  "A</p>";
       // lines += "<p>L3 Current: " + String(currentL3)+  "A</p>";
-      lines += "<p>Active Power Total: " + String(activePowerTotal*1000)+  "W</p>";
-      lines += "<p>L1 Active Power: " + String(activePowerL1*1000)+  "W</p>";
-      lines += "<p>L2 Active Power: " + String(activePowerL2*1000)+  "W</p>";
-      lines += "<p>L3 Active Power: " + String(activePowerL3*1000)+  "W</p>";
+      lines += "<p>Active Power Total: " + String(activePowerTotal)+  "W</p>";
+      lines += "<p>L1 Active Power: " + String(activePowerL1)+  "W</p>";
+      lines += "<p>L2 Active Power: " + String(activePowerL2)+  "W</p>";
+      lines += "<p>L3 Active Power: " + String(activePowerL3)+  "W</p>";
+      lines += "<p>Total Active Energy: " + String(totalActiveEnergy)+  "kWh</p>";
+      lines += "<p>L1 Total Active Energy: " + String(totalActiveEnergyL1)+  "kWh</p>";
+      lines += "<p>L2 Total Active Energy: " + String(totalActiveEnergyL2)+  "kWh</p>";
+      lines += "<p>L3 Total Active Energy: " + String(totalActiveEnergyL3)+  "kWh</p>";
       lines += "<br>";
       lines += "<h2>ESP32 | Temperature sensors</h2>";
       lines += "<p>Sensor1:  " + String(tempSensor1)+  "°C</p>";
@@ -105,8 +110,7 @@ String dataToHtml(const String& var){
   return String();
 }
 
-int i;
-int sendmsglen=8; // send message for OR-WE-517 is always 8bites long 
+
 
 // void create_json(char *tag, float value, char *unit) {  
 //   jsonDocument.clear();  
@@ -185,10 +189,14 @@ void setup() {
   server.on("/power", HTTP_GET, [] (AsyncWebServerRequest *request) {
       Serial.println("Get power data");
       jsonDocument.clear();
-      add_json_object("activePowerTotal", activePowerTotal*1000, "W");
-      add_json_object("activePowerL1", activePowerL1*1000, "W");
-      add_json_object("activePowerL2", activePowerL2*1000, "W");
-      add_json_object("activePowerL3", activePowerL3*1000, "W");
+      add_json_object("activePowerTotal", activePowerTotal, "W");
+      add_json_object("activePowerL1", activePowerL1, "W");
+      add_json_object("activePowerL2", activePowerL2, "W");
+      add_json_object("activePowerL3", activePowerL3, "W");
+      add_json_object("totalActiveEnergy", totalActiveEnergy, "kWh");
+      add_json_object("totalActiveEnergyL1", totalActiveEnergyL1, "kWh");
+      add_json_object("totalActiveEnergyL2", totalActiveEnergyL2, "kWh");
+      add_json_object("totalActiveEnergyL3", totalActiveEnergyL3, "kWh");
       serializeJson(jsonDocument, buffer);
       request->send(200, "application/json", buffer);
   }); 
@@ -202,10 +210,21 @@ void setup() {
       add_json_object("tempSensor3", tempSensor3, "°C");
       add_json_object("tempSensor4", tempSensor4, "°C");
       add_json_object("tempSensor5", tempSensor5, "°C");
-      add_json_object("activePowerTotal", activePowerTotal*1000, "W");
-      add_json_object("activePowerL1", activePowerL1*1000, "W");
-      add_json_object("activePowerL2", activePowerL2*1000, "W");
-      add_json_object("activePowerL3", activePowerL3*1000, "W");
+      add_json_object("voltageL1", voltageL1, "V");
+      add_json_object("voltageL2", voltageL2, "V");
+      add_json_object("voltageL3", voltageL3, "V");
+      add_json_object("frequency", frequency, "Hz");
+      add_json_object("currentL1", currentL1, "A");
+      add_json_object("currentL2", currentL2, "A");
+      add_json_object("currentL3", currentL3, "A");
+      add_json_object("activePowerTotal", activePowerTotal, "W");
+      add_json_object("activePowerL1", activePowerL1, "W");
+      add_json_object("activePowerL2", activePowerL2, "W");
+      add_json_object("activePowerL3", activePowerL3, "W");
+      add_json_object("totalActiveEnergy", totalActiveEnergy, "kWh");
+      add_json_object("totalActiveEnergyL1", totalActiveEnergyL1, "kWh");
+      add_json_object("totalActiveEnergyL2", totalActiveEnergyL2, "kWh");
+      add_json_object("totalActiveEnergyL3", totalActiveEnergyL3, "kWh");
       serializeJson(jsonDocument, buffer);
       request->send(200, "application/json", buffer);
   }); 
@@ -227,8 +246,8 @@ float From32HexToDec (byte val1, byte val2, byte val3, byte val4){
 }  
 
 
-void loop() {
- Serial.print("Requesting temperatures...");
+void getTemperatures() {
+  Serial.print("Requesting temperatures...");
   sensors.requestTemperatures(); // Send the command to get temperatures
   Serial.println("DONE");
 
@@ -236,7 +255,7 @@ void loop() {
   Serial.print("Sensor 1(*C): ");
   Serial.println(tempSensor1); 
  
- tempSensor2 = sensors.getTempC(sensor2);
+  tempSensor2 = sensors.getTempC(sensor2);
   Serial.print("Sensor 2(*C): ");
   Serial.println(tempSensor2); 
   
@@ -251,60 +270,68 @@ void loop() {
   tempSensor5 = sensors.getTempC(sensor5);
   Serial.print("Sensor 5(*C): ");
   Serial.println(tempSensor5); 
- Serial.println();
+  Serial.println();
  
-// ************************  SEND DATA TO DEVICE ************************* 
-// https://unserver.xyz/modbus-guide/#modbus-rtu-data-frame-section
-// CRC calculator https://www.simplymodbus.ca/crc.xls
-// OR-WE-517 modbus registers list https://b2b.orno.pl/download-resource/26065/
-// byte sendmsg[] = {0x01, 0x03, 0x00, 0x1C, 0x00, 0x01, 0x45, 0xCC};
-//byte sendmsg[] = {0x01, 0x03, 0x00, 0x1C, 0x00, 0x02, 0x05, 0xCD}; 
-
-byte sendmsg[] = {0x01, 0x03, 0x00, 0x0E, 0x00, 0x16, 0xA5, 0xC7}; 
-
-Serial.print("Message sent to device: ");
-for(i = 0 ; i < sendmsglen ; i++){
-  Serial2.write(sendmsg[i]); 
-  Serial.print(sendmsg[i], HEX); 
- }
-
-// This part is commented as I used it during development and it is not needed later.
-// Results looks like this:
-
-// Message sent to device: 1301C025CD
-// Message byte array
-// Bite number:0|1|2|3|4|5|6|7|
-// HEX :1|3|0|1C|0|2|5|CD|
-// DEC :1|3|0|28|0|2|5|205|
-
-// Uncoment when needed
-// Serial.println();
-// Serial.println("Message byte array");
-// Serial.print("Bite number:");
-//  for(i = 0 ; i < sendmsglen ; i++){
-//       Serial.print(i);  
-//             Serial.print("|");      
-//  }
-//  Serial.println();
-//   Serial.print("HEX :");
-//  for(i = 0 ; i < sendmsglen ; i++){
-//       Serial.print(sendmsg[i], HEX);  
-//             Serial.print("|");      
-//  }
-//   Serial.println();
-//    Serial.print("DEC :");
-//  for(i = 0 ; i < sendmsglen ; i++){
-//       Serial.print(sendmsg[i]);  
-//             Serial.print("|");      
-//  }
-// Serial.println();
-Serial.println();
+}
 
 
+void sendMessageModbus(byte sendmsg[]) {
+  // ************************  SEND DATA TO DEVICE ************************* 
+  // https://unserver.xyz/modbus-guide/#modbus-rtu-data-frame-section
+  // CRC calculator https://www.simplymodbus.ca/crc.xls
+  // OR-WE-517 modbus registers list https://b2b.orno.pl/download-resource/26065/
+  // byte sendmsg[] = {0x01, 0x03, 0x00, 0x1C, 0x00, 0x01, 0x45, 0xCC};
+  //byte sendmsg[] = {0x01, 0x03, 0x00, 0x1C, 0x00, 0x02, 0x05, 0xCD}; 
+  int i;
+  int sendmsglen=8; // send message for OR-WE-517 is always 8bites long 
+
+  Serial.print("Message sent to device: ");
+  for(i = 0 ; i < sendmsglen ; i++){
+    Serial2.write(sendmsg[i]); 
+    Serial.print(sendmsg[i], HEX); 
+  }
+
+  // This part is commented as I used it during development and it is not needed later.
+  // Results looks like this:
+
+  // Message sent to device: 1301C025CD
+  // Message byte array
+  // Bite number:0|1|2|3|4|5|6|7|
+  // HEX :1|3|0|1C|0|2|5|CD|
+  // DEC :1|3|0|28|0|2|5|205|
+
+  // Uncoment when needed
+  // Serial.println();
+  // Serial.println("Message byte array");
+  // Serial.print("Bite number:");
+  //  for(i = 0 ; i < sendmsglen ; i++){
+  //       Serial.print(i);  
+  //             Serial.print("|");      
+  //  }
+  //  Serial.println();
+  //   Serial.print("HEX :");
+  //  for(i = 0 ; i < sendmsglen ; i++){
+  //       Serial.print(sendmsg[i], HEX);  
+  //             Serial.print("|");      
+  //  }
+  //   Serial.println();
+  //    Serial.print("DEC :");
+  //  for(i = 0 ; i < sendmsglen ; i++){
+  //       Serial.print(sendmsg[i]);  
+  //             Serial.print("|");      
+  //  }
+  // Serial.println();
+  Serial.println();
+  delay(500); 
+}
+
+byte receivedmsg[50];
+
+void receivedMessageModbus() {
 // **********************  DATA RECEIVED FROM DEVICE **********************
 int a=0;
 int b=0;
-byte receivedmsg[50];
+
 
 while(Serial2.available()) {
  receivedmsg[a] = Serial2.read();
@@ -346,86 +373,154 @@ Serial.println();
 //  }
 // Serial.println(); 
 Serial.println();
+}
 
 
-// ************************************************************************
-// Get DATA part from byte message
+void firstPowerData(byte data[]){
 
-// We get message for 6 registers but each register of device OR-WE-517 contain from 4 DATA bits.   
-// Example:                         1       2      3
-// Data received from device: 13C 437200 437200 43734CCD 301A
-// Below is whole magic. I use function From32HexToDec to do is nice way.
-// Testing https://babbage.cs.qc.cuny.edu/IEEE-754.old/32bit.html
-  // float x;
-  // ((byte*)&x)[3]= receivedmsg[3];
-  // ((byte*)&x)[2]= receivedmsg[4];
-  // ((byte*)&x)[1]= receivedmsg[5];
-  // ((byte*)&x)[0]= receivedmsg[6];
-  // Serial.println(x,2);
-  // Serial.println(From32HexToDec(receivedmsg[3],receivedmsg[4],receivedmsg[5],receivedmsg[6]),2);
+    sendMessageModbus(data);  
+    receivedMessageModbus();
+    
 
+    // ************************************************************************
+    // Get DATA part from byte message
 
+    // We get message for 6 registers but each register of device OR-WE-517 contain from 4 DATA bits.   
+    // Example:                         1       2      3
+    // Data received from device: 13C 437200 437200 43734CCD 301A
+    // Below is whole magic. I use function From32HexToDec to do is nice way.
+    // Testing https://babbage.cs.qc.cuny.edu/IEEE-754.old/32bit.html
+    // float x;
+    // ((byte*)&x)[3]= receivedmsg[3];
+    // ((byte*)&x)[2]= receivedmsg[4];
+    // ((byte*)&x)[1]= receivedmsg[5];
+    // ((byte*)&x)[0]= receivedmsg[6];
+    // Serial.println(x,2);
+    // Serial.println(From32HexToDec(receivedmsg[3],receivedmsg[4],receivedmsg[5],receivedmsg[6]),2);
 
+    voltageL1 =From32HexToDec(receivedmsg[3],receivedmsg[4],receivedmsg[5],receivedmsg[6]);
+    Serial.print("L1 Voltage: ");
+    Serial.print(voltageL1,2);
+    Serial.println(" V");
 
-voltageL1 =From32HexToDec(receivedmsg[3],receivedmsg[4],receivedmsg[5],receivedmsg[6]);
-Serial.print("L1 Voltage: ");
-Serial.print(voltageL1,2);
-Serial.println(" V");
-voltageL2 =From32HexToDec(receivedmsg[7],receivedmsg[8],receivedmsg[9],receivedmsg[10]);
-Serial.print("L2 Voltage: ");
-Serial.print(voltageL2,2);
-Serial.println(" V");
-voltageL3 =From32HexToDec(receivedmsg[11],receivedmsg[12],receivedmsg[13],receivedmsg[14]);
-Serial.print("L3 Voltage: ");
-Serial.print(voltageL3,2);
-Serial.println(" V");
-frequency =From32HexToDec(receivedmsg[15],receivedmsg[16],receivedmsg[17],receivedmsg[18]);
-Serial.print("Grid Frequency: ");
-Serial.print(frequency,2);
-Serial.println(" Hz");
-currentL1 =From32HexToDec(receivedmsg[19],receivedmsg[20],receivedmsg[21],receivedmsg[22]);
-Serial.print("L1 Current: ");
-Serial.print(currentL1,2);
-Serial.println(" A");
-currentL2 =From32HexToDec(receivedmsg[23],receivedmsg[24],receivedmsg[25],receivedmsg[26]);
-Serial.print("L2 Current: ");
-Serial.print(currentL2,2);
-Serial.println(" A");
-currentL3 =From32HexToDec(receivedmsg[27],receivedmsg[28],receivedmsg[29],receivedmsg[30]);
-Serial.print("L3 Current: ");
-Serial.print(currentL3,2);
-Serial.println(" A");
-activePowerTotal =From32HexToDec(receivedmsg[31],receivedmsg[32],receivedmsg[33],receivedmsg[34]);
-Serial.print("Total Active Power: ");
-// Serial.print(activePowerTotal,2);
-// Serial.print(" kW | ");
-Serial.print(activePowerTotal*1000);
-Serial.println(" W");
-activePowerL1 =From32HexToDec(receivedmsg[35],receivedmsg[36],receivedmsg[37],receivedmsg[38]);
-Serial.print("L1 Active Power: ");
-// Serial.print(activePowerL1,2);
-// Serial.print(" kW | ");
-Serial.print(activePowerL1*1000);
-Serial.println(" W");
-activePowerL2 =From32HexToDec(receivedmsg[39],receivedmsg[40],receivedmsg[41],receivedmsg[42]);
-Serial.print("L2 Active Power: ");
-// Serial.print(activePowerL2,2);
-// Serial.print(" kW | ");
-Serial.print(activePowerL2*1000);
-Serial.println(" W");
-activePowerL3 =From32HexToDec(receivedmsg[43],receivedmsg[44],receivedmsg[45],receivedmsg[46]);
-Serial.print("L3 Active Power: ");
-// Serial.print(activePowerL3,2);
-// Serial.print(" kW | ");
-Serial.print(activePowerL3*1000);
-Serial.println(" W");
+    voltageL2 =From32HexToDec(receivedmsg[7],receivedmsg[8],receivedmsg[9],receivedmsg[10]);
+    Serial.print("L2 Voltage: ");
+    Serial.print(voltageL2,2);
+    Serial.println(" V");
 
-Serial.println();
+    voltageL3 =From32HexToDec(receivedmsg[11],receivedmsg[12],receivedmsg[13],receivedmsg[14]);
+    Serial.print("L3 Voltage: ");
+    Serial.print(voltageL3,2);
+    Serial.println(" V");
 
+    frequency =From32HexToDec(receivedmsg[15],receivedmsg[16],receivedmsg[17],receivedmsg[18]);
+    Serial.print("Grid Frequency: ");
+    Serial.print(frequency,2);
+    Serial.println(" Hz");
 
+    currentL1 =From32HexToDec(receivedmsg[19],receivedmsg[20],receivedmsg[21],receivedmsg[22]);
+    Serial.print("L1 Current: ");
+    Serial.print(currentL1,2);
+    Serial.println(" A");
 
-delay(5000);        
+    currentL2 =From32HexToDec(receivedmsg[23],receivedmsg[24],receivedmsg[25],receivedmsg[26]);
+    Serial.print("L2 Current: ");
+    Serial.print(currentL2,2);
+    Serial.println(" A");
 
+    currentL3 =From32HexToDec(receivedmsg[27],receivedmsg[28],receivedmsg[29],receivedmsg[30]);
+    Serial.print("L3 Current: ");
+    Serial.print(currentL3,2);
+    Serial.println(" A");
+
+    // *1000 to get W because provided value is in kW
+    activePowerTotal =From32HexToDec(receivedmsg[31],receivedmsg[32],receivedmsg[33],receivedmsg[34])*1000;
+    Serial.print("Total Active Power: ");
+    Serial.print(activePowerTotal);
+    Serial.println(" W");
+
+    // *1000 to get W because provided value is in kW
+    activePowerL1 =From32HexToDec(receivedmsg[35],receivedmsg[36],receivedmsg[37],receivedmsg[38])*1000;
+    Serial.print("L1 Active Power: ");
+    Serial.print(activePowerL1);
+    Serial.println(" W");
+    
+    // *1000 to get W because provided value is in kW
+    activePowerL2 =From32HexToDec(receivedmsg[39],receivedmsg[40],receivedmsg[41],receivedmsg[42])*1000;
+    Serial.print("L2 Active Power: ");
+    Serial.print(activePowerL2);
+    Serial.println(" W");
+
+    // *1000 to get W because provided value is in kW
+    activePowerL3 =From32HexToDec(receivedmsg[43],receivedmsg[44],receivedmsg[45],receivedmsg[46])*1000;
+    Serial.print("L3 Active Power: ");
+    Serial.print(activePowerL3);
+    Serial.println(" W");
+
+    Serial.println();
+}
+
+void secondPowerData(byte data[]){
+
+    sendMessageModbus(data);  
+    receivedMessageModbus();
+ 
+    // ************************************************************************
+    // Get DATA part from byte message
+
+    // We get message for 6 registers but each register of device OR-WE-517 contain from 4 DATA bits.   
+    // Example:                         1       2      3
+    // Data received from device: 13C 437200 437200 43734CCD 301A
+    // Below is whole magic. I use function From32HexToDec to do is nice way.
+    // Testing https://babbage.cs.qc.cuny.edu/IEEE-754.old/32bit.html
+    // float x;
+    // ((byte*)&x)[3]= receivedmsg[3];
+    // ((byte*)&x)[2]= receivedmsg[4];
+    // ((byte*)&x)[1]= receivedmsg[5];
+    // ((byte*)&x)[0]= receivedmsg[6];
+    // Serial.println(x,2);
+    // Serial.println(From32HexToDec(receivedmsg[3],receivedmsg[4],receivedmsg[5],receivedmsg[6]),2);   
+
+    totalActiveEnergy =From32HexToDec(receivedmsg[3],receivedmsg[4],receivedmsg[5],receivedmsg[6]);
+    Serial.print("Total Active Energy: ");
+    Serial.print(totalActiveEnergy,2);
+    Serial.println(" kWh");
+
+    totalActiveEnergyL1 =From32HexToDec(receivedmsg[7],receivedmsg[8],receivedmsg[9],receivedmsg[10]);
+    Serial.print("L1 Total Active Energy: ");
+    Serial.print(totalActiveEnergyL1,2);
+    Serial.println(" kWh");
+
+    totalActiveEnergyL2 =From32HexToDec(receivedmsg[11],receivedmsg[12],receivedmsg[13],receivedmsg[14]);
+    Serial.print("L2 Total Active Energy: ");
+    Serial.print(totalActiveEnergyL2,2);
+    Serial.println(" kWh");
+
+    totalActiveEnergyL3 =From32HexToDec(receivedmsg[15],receivedmsg[16],receivedmsg[17],receivedmsg[18]);
+    Serial.print("L3 Total Active Energy: ");
+    Serial.print(totalActiveEnergyL3,2);
+    Serial.println(" kWh");
+
+    Serial.println();
+}
+
+void loop() {
+    getTemperatures();
+    byte firstMsgArray[]={0x01, 0x03, 0x00, 0x0E, 0x00, 0x16, 0xA5, 0xC7};
+    // sendMessageModbus(firstMsgArray);  
+    // receivedMessageModbus();
+    // splitReceivedData();
+    firstPowerData(firstMsgArray);
+
+    delay(2000);  
+
+    byte secondMsgArray[]={0x01, 0x03, 0x01, 0x00, 0x00, 0x03, 0x04, 0x37};
+    // sendMessageModbus(secondMsgArray);  
+    // receivedMessageModbus();
+    // splitReceivedData();
+    secondPowerData(secondMsgArray);
+
+    delay(1000);        
 }
 
 
