@@ -4,6 +4,7 @@
                               // https://github.com/me-no-dev/ESPAsyncWebServer
 
 #include <ArduinoJson.h>  //https://microcontrollerslab.com/esp32-rest-api-web-server-get-post-postman/
+                          // https://arduinojson.org/v6/api/jsonobject/createnestedobject/
 #include <OneWire.h> // https://randomnerdtutorials.com/esp32-ds18b20-temperature-arduino-ide/
 #include <DallasTemperature.h>  // https://randomnerdtutorials.com/esp32-multiple-ds18b20-temperature-sensors/
 
@@ -25,8 +26,12 @@ DeviceAddress sensor5 = { 0x28, 0xFF, 0xC9, 0x8,  0x2, 0x17, 0x3, 0xAA };
 
 float voltageL1,voltageL2,voltageL3,frequency,currentL1,currentL2,currentL3,activePowerTotal,activePowerL1,activePowerL2,activePowerL3,tempSensor1,tempSensor2,tempSensor3,tempSensor4,tempSensor5,totalActiveEnergy,totalActiveEnergyL1,totalActiveEnergyL2,totalActiveEnergyL3;
 
-StaticJsonDocument<2000> jsonDocument;
-char buffer[2000];
+// define the static JSON object and array
+StaticJsonDocument<3000> jsonDocument;
+char buffer[3000];
+DynamicJsonDocument dynamicJson(3000);
+JsonArray jsonArray =dynamicJson.to<JsonArray>();
+
 
 // Replace with your network credentials
 const char* ssid = WIFI_SSID;
@@ -39,6 +44,7 @@ IPAddress primaryDNS(1, 1, 1, 1);
 IPAddress secondaryDNS(8, 8, 8, 8);
 IPAddress gateway(192, 168, 10, 1);
 String hostname = "ESP32_Power"; // https://randomnerdtutorials.com/esp32-set-custom-hostname-arduino/
+                                 //used alsso for API names     
 
 
 AsyncWebServer server(80);
@@ -109,22 +115,21 @@ String dataToHtml(const String& var){
   }
   return String();
 }
-
-
-
-// void create_json(char *tag, float value, char *unit) {  
-//   jsonDocument.clear();  
-//   jsonDocument["type"] = tag;
-//   jsonDocument["value"] = value;
-//   jsonDocument["unit"] = unit;
-//   serializeJson(jsonDocument, buffer);
-// }
  
 void add_json_object(char *tag, float value, char *unit) {
-  JsonObject obj = jsonDocument.createNestedObject();
-  obj["sensor"] = tag;
-  obj["value"] = value;
-  obj["unit"] = unit; 
+  //jsonDocument and dynamicJson is deffined on top
+  //I'm not proud for that, but inspired by code from https://chat.openai.com/chat/a9e1dbed-af43-4c79-a0de-a7681a70d95a
+
+  // create a dynamic JSON object
+  JsonObject dynamicObject = dynamicJson.createNestedObject();
+
+  // add fields to the dynamic object
+  dynamicObject["sensor"] = tag;
+  dynamicObject["value"] = value;
+  dynamicObject["unit"] = unit;  
+
+  // add the dynamic object to the array
+  //jsonArray.add(dynamicObject);
 }
 
 void setup() {
@@ -174,12 +179,23 @@ void setup() {
 // get temperature
   server.on("/temperature", HTTP_GET, [] (AsyncWebServerRequest *request) {
       Serial.println("Get temperatures");
+
+      //clear previous result in Json      
+      jsonArray.clear();
       jsonDocument.clear();
-      add_json_object("tempSensor1", tempSensor1, "°C");
-      add_json_object("tempSensor2", tempSensor2, "°C");
-      add_json_object("tempSensor3", tempSensor3, "°C");
-      add_json_object("tempSensor4", tempSensor4, "°C");
-      add_json_object("tempSensor5", tempSensor5, "°C");
+      
+      // add some initial fields to the static object
+      jsonDocument["id"] = hostname;
+      jsonDocument["api"] = "temperature";
+      // add some nested objects to the array using the function
+      add_json_object("temp1", tempSensor1, "°C");
+      add_json_object("temp2", tempSensor2, "°C");
+      add_json_object("temp3", tempSensor3, "°C");
+      add_json_object("temp4", tempSensor4, "°C");
+      add_json_object("temp5", tempSensor5, "°C");
+      // add the array to the static object
+      jsonDocument["values"] = jsonArray;
+
       serializeJson(jsonDocument, buffer);
       request->send(200, "application/json", buffer);
   }); 
@@ -188,7 +204,14 @@ void setup() {
 // get power data
   server.on("/power", HTTP_GET, [] (AsyncWebServerRequest *request) {
       Serial.println("Get power data");
+            //clear previous result in Json      
+      jsonArray.clear();
       jsonDocument.clear();
+      
+      // add some initial fields to the static object
+      jsonDocument["id"] = hostname;
+      jsonDocument["api"] = "power";
+      // add some nested objects to the array using the function
       add_json_object("activePowerTotal", activePowerTotal, "W");
       add_json_object("activePowerL1", activePowerL1, "W");
       add_json_object("activePowerL2", activePowerL2, "W");
@@ -197,6 +220,8 @@ void setup() {
       add_json_object("totalActiveEnergyL1", totalActiveEnergyL1, "kWh");
       add_json_object("totalActiveEnergyL2", totalActiveEnergyL2, "kWh");
       add_json_object("totalActiveEnergyL3", totalActiveEnergyL3, "kWh");
+      // add the array to the static object
+      jsonDocument["values"] = jsonArray;
       serializeJson(jsonDocument, buffer);
       request->send(200, "application/json", buffer);
   }); 
@@ -204,12 +229,19 @@ void setup() {
   // get all data
   server.on("/all", HTTP_GET, [] (AsyncWebServerRequest *request) {
       Serial.println("Get all data");
+      //clear previous result in Json      
+      jsonArray.clear();
       jsonDocument.clear();
-      add_json_object("tempSensor1", tempSensor1, "°C");
-      add_json_object("tempSensor2", tempSensor2, "°C");
-      add_json_object("tempSensor3", tempSensor3, "°C");
-      add_json_object("tempSensor4", tempSensor4, "°C");
-      add_json_object("tempSensor5", tempSensor5, "°C");
+      
+      // add some initial fields to the static object
+      jsonDocument["id"] = hostname;
+      jsonDocument["api"] = "all";
+      // add some nested objects to the array using the function
+      add_json_object("temp1", tempSensor1, "°C");
+      add_json_object("temp2", tempSensor2, "°C");
+      add_json_object("temp3", tempSensor3, "°C");
+      add_json_object("temp4", tempSensor4, "°C");
+      add_json_object("temp5", tempSensor5, "°C");
       add_json_object("voltageL1", voltageL1, "V");
       add_json_object("voltageL2", voltageL2, "V");
       add_json_object("voltageL3", voltageL3, "V");
@@ -225,6 +257,8 @@ void setup() {
       add_json_object("totalActiveEnergyL1", totalActiveEnergyL1, "kWh");
       add_json_object("totalActiveEnergyL2", totalActiveEnergyL2, "kWh");
       add_json_object("totalActiveEnergyL3", totalActiveEnergyL3, "kWh");
+      // add the array to the static object
+      jsonDocument["values"] = jsonArray;
       serializeJson(jsonDocument, buffer);
       request->send(200, "application/json", buffer);
   }); 
