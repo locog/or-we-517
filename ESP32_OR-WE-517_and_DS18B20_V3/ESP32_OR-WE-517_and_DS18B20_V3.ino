@@ -26,12 +26,7 @@ DeviceAddress sensor5 = { 0x28, 0xFF, 0xC9, 0x8,  0x2, 0x17, 0x3, 0xAA };
 
 float voltageL1,voltageL2,voltageL3,frequency,currentL1,currentL2,currentL3,activePowerTotal,activePowerL1,activePowerL2,activePowerL3,tempSensor1,tempSensor2,tempSensor3,tempSensor4,tempSensor5,totalActiveEnergy,totalActiveEnergyL1,totalActiveEnergyL2,totalActiveEnergyL3;
 
-// define the static JSON object and array
-StaticJsonDocument<3000> jsonDocument;
-char buffer[3000];
-DynamicJsonDocument dynamicJson(3000);
-JsonArray jsonArray =dynamicJson.to<JsonArray>();
-
+char buffer[3048];
 
 // Replace with your network credentials
 const char* ssid = WIFI_SSID;
@@ -45,13 +40,9 @@ IPAddress secondaryDNS(8, 8, 8, 8);
 IPAddress gateway(192, 168, 10, 1);
 String hostname = "ESP32_Power"; // https://randomnerdtutorials.com/esp32-set-custom-hostname-arduino/
                                  //used alsso for API names     
-
-
 AsyncWebServer server(80);
 
-
 //web page with all available data reachable on http://192.168.10.200/ ...auto refresh
-
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html>
 <head>
@@ -84,7 +75,6 @@ setInterval(function(){
 </html>
 )rawliteral";
 
-
 String dataToHtml(const String& var){
   //Serial.println(var);
   if(var == "MYDATA"){
@@ -116,22 +106,6 @@ String dataToHtml(const String& var){
   return String();
 }
  
-void add_json_object(char *tag, float value, char *unit) {
-  //jsonDocument and dynamicJson is deffined on top
-  //I'm not proud for that, but inspired by code from https://chat.openai.com/chat/a9e1dbed-af43-4c79-a0de-a7681a70d95a
-
-  // create a dynamic JSON object
-  JsonObject dynamicObject = dynamicJson.createNestedObject();
-
-  // add fields to the dynamic object
-  dynamicObject["sensor"] = tag;
-  dynamicObject["value"] = value;
-  dynamicObject["unit"] = unit;  
-
-  // add the dynamic object to the array
-  //jsonArray.add(dynamicObject);
-}
-
 void setup() {
   Serial.begin(115200);
   Serial2.begin(9600, SERIAL_8E1, RXD2, TXD2);  //Important!!! ...don't use 8N1 with deveice OR-WE-517 ...check device configuration/datasheet ...https://www.arduino.cc/reference/en/language/functions/communication/serial/begin/
@@ -158,7 +132,6 @@ void setup() {
   WiFi.persistent(true);
   delay(100);
 
-
   delay(2000);
   
  // Route for root / web page
@@ -180,23 +153,41 @@ void setup() {
   server.on("/temperature", HTTP_GET, [] (AsyncWebServerRequest *request) {
       Serial.println("Get temperatures");
 
-      //clear previous result in Json      
-      jsonArray.clear();
-      jsonDocument.clear();
-      
-      // add some initial fields to the static object
-      jsonDocument["id"] = hostname;
-      jsonDocument["api"] = "temperature";
-      // add some nested objects to the array using the function
-      add_json_object("temp1", tempSensor1, "°C");
-      add_json_object("temp2", tempSensor2, "°C");
-      add_json_object("temp3", tempSensor3, "°C");
-      add_json_object("temp4", tempSensor4, "°C");
-      add_json_object("temp5", tempSensor5, "°C");
-      // add the array to the static object
-      jsonDocument["values"] = jsonArray;
+      //generate Json objects and array
+      StaticJsonDocument<1024> doc;
 
-      serializeJson(jsonDocument, buffer);
+      doc["id"] = hostname;
+      doc["api"] = "temperature";
+
+      JsonArray values = doc.createNestedArray("values");
+
+      JsonObject values_0 = values.createNestedObject();
+      values_0["sensor"] = "temp1";
+      values_0["value"] = tempSensor1;
+      values_0["unit"] = "°C";
+
+      JsonObject values_1 = values.createNestedObject();
+      values_1["sensor"] = "temp2";
+      values_1["value"] = tempSensor2;
+      values_1["unit"] = "°C";
+
+      JsonObject values_2 = values.createNestedObject();
+      values_2["sensor"] = "temp3";
+      values_2["value"] = tempSensor3;
+      values_2["unit"] = "°C";
+
+      JsonObject values_3 = values.createNestedObject();
+      values_3["sensor"] = "temp4";
+      values_3["value"] = tempSensor4;
+      values_3["unit"] = "°C";
+
+      JsonObject values_4 = values.createNestedObject();
+      values_4["sensor"] = "temp5";
+      values_4["value"] = tempSensor5;
+      values_4["unit"] = "°C";
+
+      serializeJson(doc, buffer);
+
       request->send(200, "application/json", buffer);
   }); 
 
@@ -204,62 +195,174 @@ void setup() {
 // get power data
   server.on("/power", HTTP_GET, [] (AsyncWebServerRequest *request) {
       Serial.println("Get power data");
-            //clear previous result in Json      
-      jsonArray.clear();
-      jsonDocument.clear();
-      
-      // add some initial fields to the static object
-      jsonDocument["id"] = hostname;
-      jsonDocument["api"] = "power";
-      // add some nested objects to the array using the function
-      add_json_object("activePowerTotal", activePowerTotal, "W");
-      add_json_object("activePowerL1", activePowerL1, "W");
-      add_json_object("activePowerL2", activePowerL2, "W");
-      add_json_object("activePowerL3", activePowerL3, "W");
-      add_json_object("totalActiveEnergy", totalActiveEnergy, "kWh");
-      add_json_object("totalActiveEnergyL1", totalActiveEnergyL1, "kWh");
-      add_json_object("totalActiveEnergyL2", totalActiveEnergyL2, "kWh");
-      add_json_object("totalActiveEnergyL3", totalActiveEnergyL3, "kWh");
-      // add the array to the static object
-      jsonDocument["values"] = jsonArray;
-      serializeJson(jsonDocument, buffer);
+
+      //generate Json objects and array
+      StaticJsonDocument<1024> doc;
+
+      doc["id"] = hostname;
+      doc["api"] = "power";
+
+      JsonArray values = doc.createNestedArray("values");
+
+      JsonObject values_0 = values.createNestedObject();
+      values_0["sensor"] = "activePowerTotal";
+      values_0["value"] = activePowerTotal;
+      values_0["unit"] = "W";
+
+      JsonObject values_1 = values.createNestedObject();
+      values_1["sensor"] = "activePowerL1";
+      values_1["value"] = activePowerL1;
+      values_1["unit"] = "W";
+
+      JsonObject values_2 = values.createNestedObject();
+      values_2["sensor"] = "activePowerL2";
+      values_2["value"] = activePowerL2;
+      values_2["unit"] = "W";
+
+      JsonObject values_3 = values.createNestedObject();
+      values_3["sensor"] = "activePowerL3";
+      values_3["value"] = activePowerL3;
+      values_3["unit"] = "W";
+
+      JsonObject values_4 = values.createNestedObject();
+      values_4["sensor"] = "totalActiveEnergy";
+      values_4["value"] = totalActiveEnergy;
+      values_4["unit"] = "kWh";
+
+      JsonObject values_5 = values.createNestedObject();
+      values_5["sensor"] = "totalActiveEnergyL1";
+      values_5["value"] = totalActiveEnergyL1;
+      values_5["unit"] = "kWh";
+
+      JsonObject values_6 = values.createNestedObject();
+      values_6["sensor"] = "totalActiveEnergyL2";
+      values_6["value"] = totalActiveEnergyL2;
+      values_6["unit"] = "kWh";
+
+      JsonObject values_7 = values.createNestedObject();
+      values_7["sensor"] = "totalActiveEnergyL3";
+      values_7["value"] = totalActiveEnergyL3;
+      values_7["unit"] = "kWh";
+
+      serializeJson(doc, buffer);
+
       request->send(200, "application/json", buffer);
   }); 
 
   // get all data
   server.on("/all", HTTP_GET, [] (AsyncWebServerRequest *request) {
       Serial.println("Get all data");
-      //clear previous result in Json      
-      jsonArray.clear();
-      jsonDocument.clear();
-      
-      // add some initial fields to the static object
-      jsonDocument["id"] = hostname;
-      jsonDocument["api"] = "all";
-      // add some nested objects to the array using the function
-      add_json_object("temp1", tempSensor1, "°C");
-      add_json_object("temp2", tempSensor2, "°C");
-      add_json_object("temp3", tempSensor3, "°C");
-      add_json_object("temp4", tempSensor4, "°C");
-      add_json_object("temp5", tempSensor5, "°C");
-      add_json_object("voltageL1", voltageL1, "V");
-      add_json_object("voltageL2", voltageL2, "V");
-      add_json_object("voltageL3", voltageL3, "V");
-      add_json_object("frequency", frequency, "Hz");
-      add_json_object("currentL1", currentL1, "A");
-      add_json_object("currentL2", currentL2, "A");
-      add_json_object("currentL3", currentL3, "A");
-      add_json_object("activePowerTotal", activePowerTotal, "W");
-      add_json_object("activePowerL1", activePowerL1, "W");
-      add_json_object("activePowerL2", activePowerL2, "W");
-      add_json_object("activePowerL3", activePowerL3, "W");
-      add_json_object("totalActiveEnergy", totalActiveEnergy, "kWh");
-      add_json_object("totalActiveEnergyL1", totalActiveEnergyL1, "kWh");
-      add_json_object("totalActiveEnergyL2", totalActiveEnergyL2, "kWh");
-      add_json_object("totalActiveEnergyL3", totalActiveEnergyL3, "kWh");
-      // add the array to the static object
-      jsonDocument["values"] = jsonArray;
-      serializeJson(jsonDocument, buffer);
+
+      //generate Json objects and array
+      StaticJsonDocument<3048> doc;
+
+      doc["id"] = hostname;
+      doc["api"] = "all";
+
+      JsonArray values = doc.createNestedArray("values");
+
+      JsonObject values_0 = values.createNestedObject();
+      values_0["sensor"] = "temp1";
+      values_0["value"] = tempSensor1;
+      values_0["unit"] = "°C";
+
+      JsonObject values_1 = values.createNestedObject();
+      values_1["sensor"] = "temp2";
+      values_1["value"] = tempSensor2;
+      values_1["unit"] = "°C";
+
+      JsonObject values_2 = values.createNestedObject();
+      values_2["sensor"] = "temp3";
+      values_2["value"] = tempSensor3;
+      values_2["unit"] = "°C";
+
+      JsonObject values_3 = values.createNestedObject();
+      values_3["sensor"] = "temp4";
+      values_3["value"] = tempSensor4;
+      values_3["unit"] = "°C";
+
+      JsonObject values_4 = values.createNestedObject();
+      values_4["sensor"] = "temp5";
+      values_4["value"] = tempSensor5;
+      values_4["unit"] = "°C";
+
+      JsonObject values_5 = values.createNestedObject();
+      values_5["sensor"] = "voltageL1";
+      values_5["value"] = voltageL1;
+      values_5["unit"] = "V";
+
+      JsonObject values_6 = values.createNestedObject();
+      values_6["sensor"] = "voltageL2";
+      values_6["value"] = voltageL2;
+      values_6["unit"] = "V";
+
+      JsonObject values_7 = values.createNestedObject();
+      values_7["sensor"] = "voltageL3";
+      values_7["value"] = voltageL3;
+      values_7["unit"] = "V";
+
+      JsonObject values_8 = values.createNestedObject();
+      values_8["sensor"] = "frequency";
+      values_8["value"] = frequency;
+      values_8["unit"] = "Hz";
+
+      JsonObject values_9 = values.createNestedObject();
+      values_9["sensor"] = "currentL1";
+      values_9["value"] = currentL1;
+      values_9["unit"] = "A";
+
+      JsonObject values_10 = values.createNestedObject();
+      values_10["sensor"] = "currentL2";
+      values_10["value"] = currentL2;
+      values_10["unit"] = "A";
+
+      JsonObject values_11 = values.createNestedObject();
+      values_11["sensor"] = "currentL3";
+      values_11["value"] = currentL3;
+      values_11["unit"] = "A";
+
+      JsonObject values_12 = values.createNestedObject();
+      values_12["sensor"] = "activePowerTotal";
+      values_12["value"] = activePowerTotal;
+      values_12["unit"] = "W";
+
+      JsonObject values_13 = values.createNestedObject();
+      values_13["sensor"] = "activePowerL1";
+      values_13["value"] = activePowerL1;
+      values_13["unit"] = "W";
+
+      JsonObject values_14 = values.createNestedObject();
+      values_14["sensor"] = "activePowerL2";
+      values_14["value"] = activePowerL2;
+      values_14["unit"] = "W";
+
+      JsonObject values_15 = values.createNestedObject();
+      values_15["sensor"] = "activePowerL3";
+      values_15["value"] = activePowerL3;
+      values_15["unit"] = "W";
+
+      JsonObject values_16 = values.createNestedObject();
+      values_16["sensor"] = "totalActiveEnergy";
+      values_16["value"] = totalActiveEnergy;
+      values_16["unit"] = "kWh";
+
+      JsonObject values_17 = values.createNestedObject();
+      values_17["sensor"] = "totalActiveEnergyL1";
+      values_17["value"] = totalActiveEnergyL1;
+      values_17["unit"] = "kWh";
+
+      JsonObject values_18 = values.createNestedObject();
+      values_18["sensor"] = "totalActiveEnergyL2";
+      values_18["value"] = totalActiveEnergyL2;
+      values_18["unit"] = "kWh";
+
+      JsonObject values_19 = values.createNestedObject();
+      values_19["sensor"] = "totalActiveEnergyL3";
+      values_19["value"] = totalActiveEnergyL3;
+      values_19["unit"] = "kWh";
+
+      serializeJson(doc, buffer);
+
       request->send(200, "application/json", buffer);
   }); 
 
