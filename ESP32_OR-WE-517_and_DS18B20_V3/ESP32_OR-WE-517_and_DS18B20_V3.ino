@@ -38,7 +38,7 @@ IPAddress subnet(255, 255, 255, 0);
 IPAddress primaryDNS(1, 1, 1, 1);
 IPAddress secondaryDNS(8, 8, 8, 8);
 IPAddress gateway(192, 168, 10, 1);
-String hostname = "ESP32_Power"; // https://randomnerdtutorials.com/esp32-set-custom-hostname-arduino/
+String hostname = "ESP32Power"; // https://randomnerdtutorials.com/esp32-set-custom-hostname-arduino/
                                  //used alsso for API names     
 AsyncWebServer server(80);
 
@@ -130,7 +130,7 @@ void setup() {
   Serial.println(WiFi.localIP());
   WiFi.setAutoReconnect(true);
   WiFi.persistent(true);
-  delay(100);
+  delay(200);
 
   delay(2000);
   
@@ -224,25 +224,42 @@ void setup() {
       values_3["value"] = activePowerL3;
       values_3["unit"] = "W";
 
-      JsonObject values_4 = values.createNestedObject();
-      values_4["sensor"] = "totalActiveEnergy";
-      values_4["value"] = totalActiveEnergy;
-      values_4["unit"] = "kWh";
+      serializeJson(doc, buffer);
 
-      JsonObject values_5 = values.createNestedObject();
-      values_5["sensor"] = "totalActiveEnergyL1";
-      values_5["value"] = totalActiveEnergyL1;
-      values_5["unit"] = "kWh";
+      request->send(200, "application/json", buffer);
+  }); 
 
-      JsonObject values_6 = values.createNestedObject();
-      values_6["sensor"] = "totalActiveEnergyL2";
-      values_6["value"] = totalActiveEnergyL2;
-      values_6["unit"] = "kWh";
+  // get power data
+  server.on("/energy", HTTP_GET, [] (AsyncWebServerRequest *request) {
+      Serial.println("Get power data");
 
-      JsonObject values_7 = values.createNestedObject();
-      values_7["sensor"] = "totalActiveEnergyL3";
-      values_7["value"] = totalActiveEnergyL3;
-      values_7["unit"] = "kWh";
+      //generate Json objects and array
+      StaticJsonDocument<1024> doc;
+
+      doc["id"] = hostname;
+      doc["api"] = "energy";
+
+      JsonArray values = doc.createNestedArray("values");
+
+      JsonObject values_0 = values.createNestedObject();
+      values_0["sensor"] = "totalActiveEnergy";
+      values_0["value"] = totalActiveEnergy;
+      values_0["unit"] = "kWh";
+
+      JsonObject values_1 = values.createNestedObject();
+      values_1["sensor"] = "totalActiveEnergyL1";
+      values_1["value"] = totalActiveEnergyL1;
+      values_1["unit"] = "kWh";
+
+      JsonObject values_2 = values.createNestedObject();
+      values_2["sensor"] = "totalActiveEnergyL2";
+      values_2["value"] = totalActiveEnergyL2;
+      values_2["unit"] = "kWh";
+
+      JsonObject values_3 = values.createNestedObject();
+      values_3["sensor"] = "totalActiveEnergyL3";
+      values_3["value"] = totalActiveEnergyL3;
+      values_3["unit"] = "kWh";
 
       serializeJson(doc, buffer);
 
@@ -642,6 +659,12 @@ void secondPowerData(byte data[]){
 }
 
 void loop() {
+    Serial.print("\n");
+    Serial.print("Connected to Wi-Fi: ");
+    Serial.println(WiFi.SSID());
+    Serial.println(WiFi.localIP());
+    Serial.print("\n");
+
     getTemperatures();
     byte firstMsgArray[]={0x01, 0x03, 0x00, 0x0E, 0x00, 0x16, 0xA5, 0xC7};
     // sendMessageModbus(firstMsgArray);  
