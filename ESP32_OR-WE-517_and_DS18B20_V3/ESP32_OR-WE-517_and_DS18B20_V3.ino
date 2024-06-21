@@ -7,6 +7,7 @@
                           // https://arduinojson.org/v6/api/jsonobject/createnestedobject/
 #include <OneWire.h> // https://randomnerdtutorials.com/esp32-ds18b20-temperature-arduino-ide/
 #include <DallasTemperature.h>  // https://randomnerdtutorials.com/esp32-multiple-ds18b20-temperature-sensors/
+                                //https://randomnerdtutorials.com/guide-for-ds18b20-temperature-sensor-with-arduino/
 
 // Data wire is connected to GPIO15
 #define ONE_WIRE_BUS 15
@@ -95,11 +96,11 @@ String dataToHtml(const String& var){
       lines += "<p>L3 Total Active Energy: " + String(totalActiveEnergyL3)+  "kWh</p>";
       lines += "<br>";
       lines += "<h2>ESP32 | Temperature sensors</h2>";
-      lines += "<p>Sensor1:  " + String(tempSensor1)+  "°C</p>";
-      lines += "<p>Sensor2:  " + String(tempSensor2)+  "°C</p>";
-      lines += "<p>Sensor3:  " + String(tempSensor3)+  "°C</p>";
-      lines += "<p>Sensor4:  " + String(tempSensor4)+  "°C</p>";
-      lines += "<p>Sensor5:  " + String(tempSensor5)+  "°C</p>";
+      lines += "<p>Sensor1:  " + String(tempSensor1)+ "°C</p>";
+      lines += "<p>Sensor2:  " + String(tempSensor2)+ "°C</p>";
+      lines += "<p>Sensor3:  " + String(tempSensor3)+ "°C</p>";
+      lines += "<p>Sensor4:  " + String(tempSensor4)+ "°C</p>";
+      lines += "<p>Sensor5:  " + String(tempSensor5)+ "°C</p>";
 
     return lines;
   }
@@ -137,6 +138,18 @@ void setup() {
  // Route for root / web page
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/html", index_html,dataToHtml);
+  });
+
+ // Route for metrics / Prometheus
+  server.on("/metrics", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(200, "text/plain", "
+    # HELP ham_temp_sensor1 Temp counter metric show °C\n# TYPE ham_temp_sensor1 gauge\nham_temp_sensor1 "+tempSensor1+"\n
+    # HELP ham_temp_sensor2 Temp counter metric show °C\n# TYPE ham_temp_sensor2 gauge\nham_temp_sensor2 "+tempSensor2+"\n
+    # HELP ham_temp_sensor3 Temp counter metric show °C\n# TYPE ham_temp_sensor3 gauge\nham_temp_sensor3 "+tempSensor3+"\n
+    # HELP ham_temp_sensor4 Temp counter metric show °C\n# TYPE ham_temp_sensor4 gauge\nham_temp_sensor4 "+tempSensor4+"\n
+    # HELP ham_temp_sensor5 Temp counter metric show °C\n# TYPE ham_temp_sensor5 gauge\nham_temp_sensor5 "+tempSensor5+"\n
+    ");
+
   });
 
 // just for testing
@@ -190,7 +203,6 @@ void setup() {
 
       request->send(200, "application/json", buffer);
   }); 
-
 
 // get power data
   server.on("/power", HTTP_GET, [] (AsyncWebServerRequest *request) {
@@ -383,6 +395,7 @@ void setup() {
       request->send(200, "application/json", buffer);
   }); 
 
+ 
   // Start server
   server.begin();
  
@@ -399,13 +412,12 @@ float From32HexToDec (byte val1, byte val2, byte val3, byte val4){
   return x;
 }  
 
-
 void getTemperatures() {
   Serial.print("Requesting temperatures...");
   sensors.requestTemperatures(); // Send the command to get temperatures
   Serial.println("DONE");
 
-  tempSensor1 = sensors.getTempC(sensor1);
+  tempSensor1 = sensors.getTempC(sensor1); 
   Serial.print("Sensor 1(*C): ");
   Serial.println(tempSensor1); 
  
@@ -427,7 +439,6 @@ void getTemperatures() {
   Serial.println();
  
 }
-
 
 void sendMessageModbus(byte sendmsg[]) {
   // ************************  SEND DATA TO DEVICE ************************* 
@@ -666,6 +677,7 @@ void loop() {
     Serial.print("\n");
 
     getTemperatures();
+
     byte firstMsgArray[]={0x01, 0x03, 0x00, 0x0E, 0x00, 0x16, 0xA5, 0xC7};
     // sendMessageModbus(firstMsgArray);  
     // receivedMessageModbus();
