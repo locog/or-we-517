@@ -142,15 +142,16 @@ void setup() {
 
  // Route for metrics / Prometheus
   server.on("/metrics", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(200, "text/plain", "
-    # HELP ham_temp_sensor1 Temp counter metric show °C\n# TYPE ham_temp_sensor1 gauge\nham_temp_sensor1 "+tempSensor1+"\n
-    # HELP ham_temp_sensor2 Temp counter metric show °C\n# TYPE ham_temp_sensor2 gauge\nham_temp_sensor2 "+tempSensor2+"\n
-    # HELP ham_temp_sensor3 Temp counter metric show °C\n# TYPE ham_temp_sensor3 gauge\nham_temp_sensor3 "+tempSensor3+"\n
-    # HELP ham_temp_sensor4 Temp counter metric show °C\n# TYPE ham_temp_sensor4 gauge\nham_temp_sensor4 "+tempSensor4+"\n
-    # HELP ham_temp_sensor5 Temp counter metric show °C\n# TYPE ham_temp_sensor5 gauge\nham_temp_sensor5 "+tempSensor5+"\n
-    ");
+  String response = 
+            "# HELP ham_temp_sensor1 Temp counter metric show Degre Celsius\n# TYPE ham_temp_sensor1 gauge\nham_temp_sensor1 " + String(tempSensor1) + "\n"
+            "# HELP ham_temp_sensor2 Temp counter metric show Degre Celsius\n# TYPE ham_temp_sensor2 gauge\nham_temp_sensor2 " + String(tempSensor2) + "\n"
+            "# HELP ham_temp_sensor3 Temp counter metric show Degre Celsius\n# TYPE ham_temp_sensor3 gauge\nham_temp_sensor3 " + String(tempSensor3) + "\n"
+            "# HELP ham_temp_sensor4 Temp counter metric show Degre Celsius\n# TYPE ham_temp_sensor4 gauge\nham_temp_sensor4 " + String(tempSensor4) + "\n"
+            "# HELP ham_temp_sensor5 Temp counter metric show Degre Celsius\n# TYPE ham_temp_sensor5 gauge\nham_temp_sensor5 " + String(tempSensor5) + "\n";
+        
+        request->send(200, "text/plain", response);
+    });
 
-  });
 
 // just for testing
  server.on("/hello", HTTP_GET, [] (AsyncWebServerRequest *request) {
@@ -694,6 +695,3 @@ void loop() {
 
     delay(1000);        
 }
-
-
-
