@@ -147,7 +147,24 @@ void setup() {
             "# HELP ham_temp_sensor2 Temp counter metric show Degre Celsius\n# TYPE ham_temp_sensor2 gauge\nham_temp_sensor2 " + String(tempSensor2) + "\n"
             "# HELP ham_temp_sensor3 Temp counter metric show Degre Celsius\n# TYPE ham_temp_sensor3 gauge\nham_temp_sensor3 " + String(tempSensor3) + "\n"
             "# HELP ham_temp_sensor4 Temp counter metric show Degre Celsius\n# TYPE ham_temp_sensor4 gauge\nham_temp_sensor4 " + String(tempSensor4) + "\n"
-            "# HELP ham_temp_sensor5 Temp counter metric show Degre Celsius\n# TYPE ham_temp_sensor5 gauge\nham_temp_sensor5 " + String(tempSensor5) + "\n";
+            "# HELP ham_temp_sensor5 Temp counter metric show Degre Celsius\n# TYPE ham_temp_sensor5 gauge\nham_temp_sensor5 " + String(tempSensor5) + "\n"
+            "# HELP ham_voltage_l1 Voltage L1 counter metric show V\n# TYPE ham_voltage_l1 gauge\nham_voltage_l1 " + String(voltageL1) + "\n"
+            "# HELP ham_voltage_l2 Voltage L2 counter metric show V\n# TYPE ham_voltage_l2 gauge\nham_voltage_l2 " + String(voltageL2) + "\n"
+            "# HELP ham_voltage_l3 Voltage L3 counter metric show V\n# TYPE ham_voltage_l3 gauge\nham_voltage_l3 " + String(voltageL3) + "\n"
+            "# HELP ham_frequency Frequency counter metric show Hz\n# TYPE ham_frequency gauge\nham_frequency " + String(frequency) + "\n"
+            "# HELP ham_current_l1 Current L1 counter metric show A\n# TYPE ham_current_l1 gauge\nham_current_l1 " + String(currentL1) + "\n"
+            "# HELP ham_current_l2 Current L2 counter metric show A\n# TYPE ham_current_l2 gauge\nham_current_l2 " + String(currentL2) + "\n"
+            "# HELP ham_current_l3 Current L3 counter metric show A\n# TYPE ham_current_l3 gauge\nham_current_l3 " + String(currentL3) + "\n"
+            "# HELP ham_activepowertotal Active Power Total counter metric show W\n# TYPE ham_activepowertotal gauge\nham_activepowertotal " + String(activePowerTotal) + "\n"
+            "# HELP ham_activepower_l1 Active Power L1 metric show W\n# TYPE ham_activepower_l1 gauge\nham_activepower_l1 " + String(activePowerL1) + "\n"
+            "# HELP ham_activepower_l2 Active Power L2 metric show W\n# TYPE ham_activepower_l2 gauge\nham_activepower_l2 " + String(activePowerL2) + "\n"
+            "# HELP ham_activepower_l3 Active Power L3 metric show W\n# TYPE ham_activepower_l3 gauge\nham_activepower_l3 " + String(activePowerL3) + "\n"
+            "# HELP ham_totalactiveenergy Total Active Energy counter metric show kWh\n# TYPE ham_totalactiveenergy gauge\nham_totalactiveenergy " + String(totalActiveEnergy) + "\n"
+            "# HELP ham_totalactiveenergy_l1 Total Active Energy L1 counter metric show kWh\n# TYPE ham_totalactiveenergy_l1 gauge\nham_totalactiveenergy_l1 " + String(totalActiveEnergyL1) + "\n"
+            "# HELP ham_totalactiveenergy_l2 Total Active Energy L2 counter metric show kWh\n# TYPE ham_totalactiveenergy_l2 gauge\nham_totalactiveenergy_l2 " + String(totalActiveEnergyL2) + "\n"
+            "# HELP ham_totalactiveenergy_l3 Total Active Energy L3 counter metric show kWh\n# TYPE ham_totalactiveenergy_l3 gauge\nham_totalactiveenergy_l3 " + String(totalActiveEnergyL3) + "\n"
+            ;
+  
         
         request->send(200, "text/plain", response);
     });
